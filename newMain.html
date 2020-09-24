@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.3/jquery.csv.min.js"></script>
+<script src="https://cdn.bootcss.com/FileSaver.js/2014-11-29/FileSaver.js"></script>
+<script src="jszip.min.js"></script>
+<body>
+  <input type="button" id="export" value="保存"  onclick="checkRight()" multiple="multiple"/>
+  已点次数：
+  <span id="dianjicishu"></span>
+  </br>
+  <input type="file" id="files" value="读取" multiple="multiple"/>
+</div>
+</body>
+<script>
+  var inputElement = document.getElementById("files");
+  inputElement.addEventListener("change", handleFiles, false);
+
+  const zip = new JSZip();
+  let promiseArr = [];
+  function handleFiles() {
+
+    var j=0;
+    for (let i = 0; i<document.getElementById("files").files.length; i++) {
+      //file = document.getElementById("files").files[i];
+      promiseArr.push(
+        new Promise((resolve,reject) => {
+          var selectedFile = document.getElementById("files").files[i];//获取读取的File对象
+          var name = selectedFile.name;//读取选中文件的文件名
+          var size = selectedFile.size;//读取选中文件的大小
+          console.log("文件名:" + name + "大小：" + size);
+          var reader = new FileReader();//这里是核心！！！读取操作就是由它完成的。
+          reader.readAsText(selectedFile);//读取文件的内容
+          // console.log("读取结果：", this.result);
+          reader.onload = function () {
+            jsonData = $.csv.toObjects(this.result);
+            var jsonData1 = new Array();  //先声明一维
+            for(let k=0;k<47;k++){    //一维长度为i,i为变量，可以根据实际情况改变
+              jsonData1[k]={};  //声明二维，每一个一维数组里面的一个元素都是一个对象；
+              for(let j=0;j<37;j++){   //一维数组里面每个元素数组可以包含的数量p，p也是一个变量；
+                jsonData1[k][j]="";    //这里将变量初始化，我这边统一初始化为空，后面在用所需的值覆盖里面的值
+              }
+            }
+
+            //对jsonData进行处理:分区
+            var z1=0;
+            for(let j=0;j<186;j+=4) {
+              var z2=0;
+              //let jsonData2 = jsonData[j];
+             /* let result = jsonData2.filter((item, index, jsonData2) => {
+                return index % 2 != 0;
+              })*/
+              for(let i1=0;i1<145;i1+=4 ) {
+                jsonData1[z1][z2]=jsonData[j][i1];
+                z2++;
+              }
+              z1++;
+            }
+            var blob = new Blob([JSON.stringify(jsonData1)], {type: "text/plain;charset=utf-8"});
+            const file_name='salt-'+i+'.json';
+            zip.file(file_name,blob);
+            resolve(jsonData);
+          };
+        }))
+    }
+  //  saveHandler();
+  }
+  var button = document.getElementById("export");
+  button.addEventListener("click", saveHandler, false);
+  var count=checkRight()-1;
+  function saveHandler() {
+    Promise.all(promiseArr).then((result)=>{
+      zip.generateAsync({ type: 'blob' }).then(content => {
+        console.log(content)
+        // 生成二进制流
+        saveAs(content, 'salt.zip') // 利用file-saver保存文件  自定义文件名
+      })
+    })
+  }
+  var x=0;
+  function checkRight() {
+    x = x + 1;
+    console.log(11);
+    document.getElementById('dianjicishu').innerHTML = x;
+    return x;
+  }
+</script>
+</html>
